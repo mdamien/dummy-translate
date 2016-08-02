@@ -1,4 +1,5 @@
-import csv, itertools, collections
+import csv, itertools, math
+from collections import Counter
 
 nl_dict = {}
 
@@ -29,75 +30,48 @@ TF/IDF
 TF(t) = (Number of times term t appears in a document) / (Total number of terms in the document)
 
 IDF(t) = log_e(Total number of documents / Number of documents with term t in it).
-
-
 """
 
 def tokenize(text):
     text = text.lower()
-    for punc in '.;,\'&!/:"':
+    for punc in '.;,\'&!/:?"':
         text = text.replace(punc, ' ')
     return [x for x in text.split(' ') if x]
 
 
-WORD = 'église'
+WORD = 'maintenant'
 SOURCE = 'fra'
 TARGET = 'nld'
 
 print('TRANSLATING:', WORD, 'FROM', SOURCE, 'TO', TARGET)
 
-all_occ = collections.Counter()
-occ = collections.Counter()
+doc1 = ''
+doc2 = ''
 
 for samples in group_trans():
     if len(samples.keys()) == 2:
         source = samples[SOURCE][0]
         target = samples[TARGET][0]
         source_tokens = tokenize(source)
-        target_tokens = tokenize(target)
-        for token in target_tokens:
-            all_occ[token] += 1
+        doc1 += target + ' '
         if WORD in source_tokens:
-            for token in target_tokens:
-                occ[token] += 1
+            doc2 += target + ' '
 
-## TF/IDF
+# it's not really exact, it should only count the word one time per sentence
+doc1_tokens = tokenize(doc1)
+doc2_tokens = tokenize(doc2)
 
-# TF(t) = frequency of a word in any sentence
-all_occ_sum = sum(all_occ.values())
-TF = {word: count/all_occ_sum for word, count in all_occ.items()}
+TF1_counter = Counter(doc1_tokens)
+TF2_counter = Counter(doc2_tokens)
+TF2 = {word: count/len(doc2_tokens) for word, count in TF2_counter.items()}
 
+# IDF(t) = log_e(Total number of documents / Number of documents with term t in it).
 
-for word, freq in sorted(TF.items(), key=lambda x: -x[1])[:10]:
-    print(word, freq)
+TF_IDF = {word: TF2.get(word, 0)*math.log(len(doc1_tokens)/count) for word, count in TF1_counter.items()}
 
-print()
-print('----')
-print()
+bests = sorted(TF_IDF.items(), key=lambda x: -x[1])[:5]
 
-# TF2(t) = frequency of a word in sentences where word occur in french too
-occ_sum = sum(occ.values())
-TF2 = {word: count/occ_sum for word, count in occ.items()}
+for word, count in bests:
+    print(count, word, TF1_counter[word], TF2_counter[word])
 
-
-
-for word, freq in occ.most_common(10):
-    print(word, freq)
-
-print('###')
-
-
-for word, freq in sorted(TF2.items(), key=lambda x: -x[1])[:10]:
-    print(word, freq)
-
-
-print()
-print('----')
-print()
-
-# TF3(t) = TF2/TF
-occ_sum = sum(occ.values())
-TF3 = [(word, TF2[word]/TF[word]) for word in TF2]
-
-for word, freq in sorted(TF3, key=lambda x: -x[1])[:10]:
-    print(word, freq)
+print('RESULT --', bests[0][0], '-- with prob', bests[0][1]*100, '%')
