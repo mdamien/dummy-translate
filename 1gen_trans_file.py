@@ -1,5 +1,8 @@
+# build a file with only translations for both languages well-linked together
+
 import csv
 
+from constants import SOURCE, TARGET, TRANS_FILE
 
 def read_sentences():
     file = open('input/sentences.csv')
@@ -13,7 +16,7 @@ def read_links():
     for row in csv.reader(file, delimiter='\t'):
         yield (int(col) for col in row)
 
-TARGET_LANGS = ('fra', 'nld')
+TARGET_LANGS = (SOURCE, TARGET)
 
 target = {}  # things we want to keep
 
@@ -33,8 +36,7 @@ for sid, tid in read_links():
 
 print(len(trans), 'trans')
 
-DEST_FILE = 'generated/fra_nld.csv'
-with open(DEST_FILE, 'w') as csvfile:
+with open(TRANS_FILE, 'w') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t')
     for sid, tids in trans.items():
         if len(tids) == len(TARGET_LANGS):
@@ -43,4 +45,4 @@ with open(DEST_FILE, 'w') as csvfile:
             if len(langs) == len(TARGET_LANGS):
                 for row in rows:
                     writer.writerow([str(x) for x in [sid] + row])
-print(DEST_FILE, 'done')
+print(TRANS_FILE, 'done')
